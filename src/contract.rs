@@ -1,9 +1,10 @@
+use crate::error::ContractError;
 use crate::{
     msg::InstantiateMsg,
     state::{State, OWNER, STATE},
 };
 use cosmwasm_std::{Coin, DepsMut, MessageInfo, Response, StdResult};
-use cw2::set_contract_version;
+use cw2::{get_contract_version, set_contract_version, ContractVersion};
 use cw_storage_plus::Item;
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -22,7 +23,22 @@ pub fn instantiate(deps: DepsMut, info: MessageInfo, msg: InstantiateMsg) -> Std
     Ok(Response::new())
 }
 
-pub fn migrate(deps: DepsMut) -> StdResult<Response> {
+pub fn migrate(mut deps: DepsMut) -> Result<Response, ContractError> {
+    let ContractVersion { contract, version } = get_contract_version(deps.storage)?;
+    if contract != CONTRACT_NAME {
+        return Err(ContractError::InvalidName(contract));
+    }
+    let resp = match version.as_str() {
+        "0.1.4" => migrate_0_1(deps.branch())?,
+        CONTRACT_VERSION => return Ok(Response::new()),
+        _ => return Err(ContractError::UnsupportedVersion(version)),
+    };
+
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(resp)
+}
+
+pub fn migrate_0_1(deps: DepsMut) -> StdResult<Response> {
     const COUNTER: Item<u64> = Item::new("counter");
     const MINIMAL_DONATION: Item<Coin> = Item::new("minimal_donation");
 

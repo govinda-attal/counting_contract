@@ -7,7 +7,7 @@ use crate::{
     state::{State, STATE},
 };
 use cosmwasm_std::{coin, coins, Addr, Coin, Empty};
-use counting_contract_0_1_3::multitest::CountingContract as CountingContract_0_1;
+use counting_contract_0_1_4::multitest::CountingContract as CountingContract_0_1;
 use cw_multi_test::{App, Contract, ContractWrapper};
 
 fn counting_contract() -> Box<dyn Contract<Empty>> {
@@ -222,7 +222,6 @@ fn migrate() {
         }
     );
 }
-
 
 #[test]
 fn migrate_no_update() {
