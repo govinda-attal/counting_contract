@@ -6,6 +6,7 @@ use crate::{
     msg::{ExecMsg, InstantiateMsg, QueryMsg, ValueResponse},
 };
 
+#[cfg(test)]
 mod tests;
 
 pub struct CountingContract(Addr);
