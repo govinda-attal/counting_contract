@@ -3,9 +3,14 @@ use crate::{
     state::{State, OWNER, STATE},
 };
 use cosmwasm_std::{Coin, DepsMut, MessageInfo, Response, StdResult};
+use cw2::set_contract_version;
 use cw_storage_plus::Item;
 
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub fn instantiate(deps: DepsMut, info: MessageInfo, msg: InstantiateMsg) -> StdResult<Response> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(
         deps.storage,
         &State {
