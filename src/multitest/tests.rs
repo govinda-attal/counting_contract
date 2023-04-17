@@ -4,6 +4,7 @@ use crate::{
 };
 use cosmwasm_std::{coins, Addr, Coin, Empty};
 use cw_multi_test::{App, Contract, ContractWrapper};
+use counting_contract_0_1_1::multitest::CountingContract as CountingContract_0_1_1;
 
 fn counting_contract() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(execute, instantiate, query);
@@ -23,6 +24,8 @@ fn query_value() {
         contract_id,
         &sender,
         "Counting contract",
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -42,6 +45,8 @@ fn donate() {
         contract_id,
         &sender,
         "Counting contract",
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -68,6 +73,8 @@ fn donate_with_funds() {
         contract_id,
         &sender,
         "Counting contract",
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -109,6 +116,7 @@ fn withdraw() {
         contract_id,
         &owner,
         "Counting contract",
+        None, 0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -147,6 +155,7 @@ fn unauthorized_withdraw() {
         contract_id,
         &owner,
         "Counting contract",
+        None, 0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -159,4 +168,31 @@ fn unauthorized_withdraw() {
             owner: owner.into()
         },
     );
+}
+
+#[test]
+fn migrate() {
+    let sender = Addr::unchecked("sender");
+    let admin = Addr::unchecked("admin");
+    let owner  = Addr::unchecked("owner");
+
+    let mut app = App::new(|router, _api, storage| {
+        router
+            .bank
+            .init_balance(storage, &sender, coins(10, ATOM))
+            .unwrap();
+    });
+
+    let old_code_id = CountingContract_0_1_1::store_code(&mut app);
+    let current_code_id = CountingContract::store_code(&mut app);
+
+    let old_contract = CountingContract_0_1_1::instantiate(
+        &mut app,
+        old_code_id,
+        &owner,
+        "Counting contract",
+        Coin::new(10, ATOM),
+    )
+    .unwrap();
+
 }

@@ -26,23 +26,27 @@ impl CountingContract {
     }
 
     #[track_caller]
-    pub fn instantiate(
+    pub fn instantiate<'a>(
         app: &mut App,
         code_id: u64,
         sender: &Addr,
         label: &str,
+        admin: impl Into<Option<&'a Addr>>,
+        counter: impl Into<Option<u64>>,
         minimal_donation: Coin,
     ) -> StdResult<CountingContract> {
+        let counter = counter.into().unwrap_or_default();
+        let admin = admin.into();
         app.instantiate_contract(
             code_id,
             sender.clone(),
             &InstantiateMsg {
                 minimal_donation,
-                counter: 0,
+                counter,
             },
             &[],
             label,
-            None,
+            admin.map(Addr::to_string),
         )
         .map_err(|err| err.downcast().unwrap())
         .map(CountingContract)

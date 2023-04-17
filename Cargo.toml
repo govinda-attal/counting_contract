@@ -23,4 +23,4 @@ cw-multi-test = {version="0.16.3", optional=true}
 
 [dev-dependencies]
 cw-multi-test = "0.16.3"
-counting_contract_0_1_0 = { version = "0.1.1", package="counting_contract", features=["tests"], git="https://github.com/govinda-attal/counting_contract.git", tag="v0.1.1"}
+counting_contract_0_1_1 = { version = "0.1.1", package="counting_contract", features=["tests"], git="https://github.com/govinda-attal/counting_contract.git", tag="v0.1.1"}
