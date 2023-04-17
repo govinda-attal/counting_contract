@@ -23,6 +23,8 @@ fn query_value() {
         contract_id,
         &sender,
         "Counting contract",
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -42,6 +44,8 @@ fn donate() {
         contract_id,
         &sender,
         "Counting contract",
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -68,6 +72,8 @@ fn donate_with_funds() {
         contract_id,
         &sender,
         "Counting contract",
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -109,6 +115,8 @@ fn withdraw() {
         contract_id,
         &owner,
         "Counting contract",
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -147,6 +155,8 @@ fn unauthorized_withdraw() {
         contract_id,
         &owner,
         "Counting contract",
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();

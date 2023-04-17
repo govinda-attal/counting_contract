@@ -1,8 +1,6 @@
-use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use error::ContractError;
 use msg::{ExecMsg, InstantiateMsg};
 mod contract;
@@ -10,10 +8,10 @@ pub mod error;
 pub mod msg;
 mod state;
 
-#[cfg(any(test, feature="tests"))]
+#[cfg(any(test, feature = "tests"))]
 pub mod multitest;
 
-#[cfg_attr(not(feature="library"), entry_point)]
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
@@ -23,7 +21,7 @@ pub fn instantiate(
     contract::instantiate(deps, info, msg)
 }
 
-#[cfg_attr(not(feature="library"), entry_point)]
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -40,7 +38,7 @@ pub fn execute(
     }
 }
 
-#[cfg_attr(not(feature="library"), entry_point)]
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: msg::QueryMsg) -> StdResult<Binary> {
     use msg::QueryMsg::*;
     match msg {
