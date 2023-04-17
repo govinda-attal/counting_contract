@@ -1,12 +1,12 @@
 use crate::{
     error::ContractError,
     execute, instantiate,
-    msg::ValueResponse,
+    msg::{Parent, ValueResponse},
     multitest::CountingContract,
     query,
     state::{State, STATE},
 };
-use cosmwasm_std::{coin, coins, Addr, Coin, Empty};
+use cosmwasm_std::{coin, coins, Addr, Coin, Decimal, Empty};
 use counting_contract_0_1_4::multitest::CountingContract as CountingContract_0_1;
 use cw_multi_test::{App, Contract, ContractWrapper};
 
@@ -31,6 +31,7 @@ fn query_value() {
         None,
         0,
         Coin::new(10, ATOM),
+        None,
     )
     .unwrap();
 
@@ -52,6 +53,7 @@ fn donate() {
         None,
         0,
         Coin::new(10, ATOM),
+        None,
     )
     .unwrap();
 
@@ -80,6 +82,7 @@ fn donate_with_funds() {
         None,
         0,
         Coin::new(10, ATOM),
+        None,
     )
     .unwrap();
 
@@ -123,6 +126,7 @@ fn withdraw() {
         None,
         0,
         Coin::new(10, ATOM),
+        None,
     )
     .unwrap();
 
@@ -163,6 +167,7 @@ fn unauthorized_withdraw() {
         None,
         0,
         Coin::new(10, ATOM),
+        None,
     )
     .unwrap();
 
@@ -218,7 +223,9 @@ fn migrate() {
         state,
         State {
             counter: 1,
-            minimal_donation: coin(10, ATOM)
+            minimal_donation: coin(10, ATOM),
+            donating_parent: None,
+            owner
         }
     );
 }
@@ -239,8 +246,78 @@ fn migrate_no_update() {
         &admin,
         None,
         coin(10, ATOM),
+        None,
     )
     .unwrap();
 
     CountingContract::migrate(&mut app, contract.into(), code_id, &admin).unwrap();
+}
+
+#[test]
+fn donating_parent() {
+    let owner = Addr::unchecked("owner");
+    let sender = Addr::unchecked("sender");
+
+    let mut app = App::new(|router, _api, storage| {
+        router
+            .bank
+            .init_balance(storage, &sender, coins(20, "atom"))
+            .unwrap();
+    });
+
+    let code_id = CountingContract::store_code(&mut app);
+
+    let parent_contract = CountingContract::instantiate(
+        &mut app,
+        code_id,
+        &owner,
+        "Parent contract",
+        None,
+        None,
+        coin(0, ATOM),
+        None,
+    )
+    .unwrap();
+
+    let contract = CountingContract::instantiate(
+        &mut app,
+        code_id,
+        &owner,
+        "Counting contract",
+        None,
+        None,
+        coin(10, ATOM),
+        Some(Parent {
+            addr: parent_contract.addr().to_string(),
+            donating_period: 2,
+            part: Decimal::percent(10),
+        }),
+    )
+    .unwrap();
+
+    contract
+        .donate(&mut app, &sender, &coins(10, ATOM))
+        .unwrap();
+    contract
+        .donate(&mut app, &sender, &coins(10, ATOM))
+        .unwrap();
+
+    let resp = parent_contract.query_value(&app).unwrap();
+    assert_eq!(resp, ValueResponse { value: 1 });
+
+    let resp = contract.query_value(&app).unwrap();
+    assert_eq!(resp, ValueResponse { value: 2 });
+
+    assert_eq!(app.wrap().query_all_balances(owner).unwrap(), vec![]);
+    assert_eq!(app.wrap().query_all_balances(sender).unwrap(), vec![]);
+    assert_eq!(
+        app.wrap().query_all_balances(contract.addr()).unwrap(),
+        coins(18, ATOM)
+    );
+    assert_eq!(
+        app.wrap()
+            .query_all_balances(parent_contract.addr())
+            .unwrap(),
+        coins(2, ATOM)
+    );
 }

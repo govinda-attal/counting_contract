@@ -39,7 +39,7 @@ pub fn execute(
     use ExecMsg::*;
 
     match msg {
-        Donate {} => donate(deps, info).map_err(ContractError::from),
+        Donate {} => donate(deps, env, info).map_err(ContractError::from),
         Reset { counter: _ } => reset(deps, info),
         Withdraw {} => withdraw(deps, env, info),
     }

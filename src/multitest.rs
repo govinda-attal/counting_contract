@@ -4,7 +4,7 @@ use cw_multi_test::{App, ContractWrapper, Executor};
 use crate::{
     error::ContractError,
     execute, instantiate, migrate,
-    msg::{ExecMsg, InstantiateMsg, QueryMsg, ValueResponse},
+    msg::{ExecMsg, InstantiateMsg, Parent, QueryMsg, ValueResponse},
     query,
 };
 
@@ -34,6 +34,7 @@ impl CountingContract {
         admin: impl Into<Option<&'a Addr>>,
         counter: impl Into<Option<u64>>,
         minimal_donation: Coin,
+        parent: Option<Parent>,
     ) -> StdResult<CountingContract> {
         let counter = counter.into().unwrap_or_default();
         let admin = admin.into();
@@ -43,6 +44,7 @@ impl CountingContract {
             &InstantiateMsg {
                 minimal_donation,
                 counter,
+                parent: parent,
             },
             &[],
             label,
