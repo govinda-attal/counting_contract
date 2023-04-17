@@ -1,9 +1,9 @@
-use cosmwasm_std::{Addr, Coin, StdResult};
+use cosmwasm_std::{Addr, Coin, Empty, StdResult};
 use cw_multi_test::{App, ContractWrapper, Executor};
 
 use crate::{
     error::ContractError,
-    execute, instantiate,
+    execute, instantiate, migrate,
     msg::{ExecMsg, InstantiateMsg, QueryMsg, ValueResponse},
     query,
 };
@@ -21,7 +21,7 @@ impl CountingContract {
 
     #[track_caller]
     pub fn store_code(app: &mut App) -> u64 {
-        let contract = ContractWrapper::new(execute, instantiate, query);
+        let contract = ContractWrapper::new(execute, instantiate, query).with_migrate(migrate);
         app.store_code(Box::new(contract))
     }
 
@@ -60,20 +60,33 @@ impl CountingContract {
         funds: &[Coin],
     ) -> Result<(), ContractError> {
         app.execute_contract(sender.clone(), self.0.clone(), &ExecMsg::Donate {}, funds)
-            .map_err(|err| err.downcast::<ContractError>().unwrap())?;
-        Ok(())
+            .map_err(|err| err.downcast::<ContractError>().unwrap())
+            .map(|_| ())
     }
 
     #[track_caller]
     pub fn withdraw(&self, app: &mut App, sender: &Addr) -> Result<(), ContractError> {
         app.execute_contract(sender.clone(), self.0.clone(), &ExecMsg::Withdraw {}, &[])
-            .map_err(|err| err.downcast::<ContractError>().unwrap())?;
-        Ok(())
+            .map_err(|err| err.downcast::<ContractError>().unwrap())
+            .map(|_| ())
     }
 
     #[track_caller]
     pub fn query_value(&self, app: &App) -> StdResult<ValueResponse> {
         app.wrap()
             .query_wasm_smart(self.0.clone(), &QueryMsg::Value {})
+    }
+
+    #[track_caller]
+    pub fn migrate(app: &mut App, contract: Addr, code_id: u64, sender: &Addr) -> StdResult<Self> {
+        app.migrate_contract(sender.clone(), contract.clone(), &Empty {}, code_id)
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| Self(contract))
+    }
+}
+
+impl From<CountingContract> for Addr {
+    fn from(contract: CountingContract) -> Self {
+        contract.0
     }
 }

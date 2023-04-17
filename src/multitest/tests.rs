@@ -1,10 +1,14 @@
 use crate::{
-    error::ContractError, execute, instantiate, msg::ValueResponse, multitest::CountingContract,
+    error::ContractError,
+    execute, instantiate,
+    msg::ValueResponse,
+    multitest::CountingContract,
     query,
+    state::{State, STATE},
 };
-use cosmwasm_std::{coins, Addr, Coin, Empty};
+use cosmwasm_std::{coin, coins, Addr, Coin, Empty};
+use counting_contract_0_1_3::multitest::CountingContract as CountingContract_0_1;
 use cw_multi_test::{App, Contract, ContractWrapper};
-use counting_contract_0_1_1::multitest::CountingContract as CountingContract_0_1_1;
 
 fn counting_contract() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new(execute, instantiate, query);
@@ -116,7 +120,8 @@ fn withdraw() {
         contract_id,
         &owner,
         "Counting contract",
-        None, 0,
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -155,7 +160,8 @@ fn unauthorized_withdraw() {
         contract_id,
         &owner,
         "Counting contract",
-        None, 0,
+        None,
+        0,
         Coin::new(10, ATOM),
     )
     .unwrap();
@@ -172,27 +178,47 @@ fn unauthorized_withdraw() {
 
 #[test]
 fn migrate() {
-    let sender = Addr::unchecked("sender");
     let admin = Addr::unchecked("admin");
-    let owner  = Addr::unchecked("owner");
+    let owner = Addr::unchecked("owner");
+    let sender = Addr::unchecked("sender");
 
     let mut app = App::new(|router, _api, storage| {
         router
             .bank
-            .init_balance(storage, &sender, coins(10, ATOM))
+            .init_balance(storage, &sender, coins(10, "atom"))
             .unwrap();
     });
 
-    let old_code_id = CountingContract_0_1_1::store_code(&mut app);
-    let current_code_id = CountingContract::store_code(&mut app);
+    let old_code_id = CountingContract_0_1::store_code(&mut app);
+    let new_code_id = CountingContract::store_code(&mut app);
 
-    let old_contract = CountingContract_0_1_1::instantiate(
+    let contract = CountingContract_0_1::instantiate(
         &mut app,
         old_code_id,
         &owner,
         "Counting contract",
-        Coin::new(10, ATOM),
+        Some(&admin),
+        None,
+        coin(10, ATOM),
     )
     .unwrap();
 
+    contract
+        .donate(&mut app, &sender, &coins(10, ATOM))
+        .unwrap();
+
+    let contract =
+        CountingContract::migrate(&mut app, contract.into(), new_code_id, &admin).unwrap();
+
+    let resp = contract.query_value(&app).unwrap();
+    assert_eq!(resp, ValueResponse { value: 1 });
+
+    let state = STATE.query(&app.wrap(), contract.addr().clone()).unwrap();
+    assert_eq!(
+        state,
+        State {
+            counter: 1,
+            minimal_donation: coin(10, ATOM)
+        }
+    );
 }
